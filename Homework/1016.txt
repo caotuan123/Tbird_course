@@ -1,0 +1,2 @@
+Bao: set ctc mode for timer1, (interrupt 1s)
+Dung: set ctc mode for timer3,(interrupt 1s)
