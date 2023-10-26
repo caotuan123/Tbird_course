@@ -80,3 +80,9 @@ void led_put(uint8_t led){
 	PORTB=led << 4;
 	PORTD=led;
 }
+
+void parse_16bit_to8bits(const uint16_t var_16,uint8_t*var1_8,uint8_t*var2_8){
+	//var1_8 var2_8
+	*var1_8=(uint8_t)var_16>>8;
+	*var2_8=(uint8_t)var_16;
+}
