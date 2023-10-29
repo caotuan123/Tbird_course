@@ -58,6 +58,7 @@ void lcd_init(void)
 	//Display ON - Kurzor cuccok
 	lcd_send_cmd(0x0C);		//LCD ON, CUR ON, BL ON //sima LCD ON 0x0C
 	//LCD CRL
+	lcd_send_cmd(LCD_CL_DISPLAY);
 	
 }
 
