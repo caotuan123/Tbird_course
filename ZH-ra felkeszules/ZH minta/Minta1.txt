@@ -1,0 +1,52 @@
+but=button_get();
+		if(but)
+		{
+			if(but==1){
+				timer0_CTCmode_init(-1,250);
+				for(int i=0;i<7;i++)
+				{
+					if(i==6)
+					{
+						while(1)
+						{
+							but1=button_get();
+							if(but1==2)
+							{
+								Change_clk_digit_to_num(ora_szam,ora_digit);
+								if(compare_clk_num_w_max(ora_szam))
+								{
+									timer0_CTCmode_init(64,250);
+									but=0;
+									break;
+								}
+							}
+						}
+						
+					}
+					while(1)
+					{
+						but1=button_get();
+						if(but1==2)i=0;
+						lcd_cur_posi(1,ora_digit[i].digit_poz);
+						lcd_data('*');
+						matrix_tmp=matrix_get();
+						if(matrix_tmp!=255)
+						{
+							ora_digit[i].current_val=matrix_tmp;
+							break;							
+						}
+					}
+					
+					
+				}
+			
+				IsSetingTime=1;
+				timer0_CTCmode_init(-1,250);
+				lcd_cur_posi(1,0);
+				lcd_data('*');
+				ora_digit[0].current_val=matrix_get();
+				lcd_print_time(ora_digit);
+			}
+			
+			
+		}
