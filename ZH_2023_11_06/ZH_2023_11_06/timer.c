@@ -43,7 +43,7 @@ void timer0_nomalmode_init(int prescaler_num_input, int top_val)
 	(pres_timer0[i].CSn0_val<<CS00);
 	
 	TCNT0=top_val;
-	TIMSK=(1<<TOIE0); //• Bit 1 – OCIE0 TimerCounter0 Output Compare Match Interrupt Enable
+	TIMSK|=(1<<TOIE0); //• Bit 1 – OCIE0 TimerCounter0 Output Compare Match Interrupt Enable
 	sei();
 }
 
@@ -66,7 +66,7 @@ void timer0_CTCmode_init(int prescaler_num_input, int top_val)
 	(1<<WGM01);
 	
 	TCNT0=0;
-	TIMSK=(1<<OCIE0); //• Bit 1 – OCIE0 TimerCounter0 Output Compare Match Interrupt Enable
+	TIMSK|=(1<<OCIE0); //• Bit 1 – OCIE0 TimerCounter0 Output Compare Match Interrupt Enable
 	OCR0=top_val;
 	sei();
 }
@@ -74,9 +74,6 @@ void timer0_CTCmode_init(int prescaler_num_input, int top_val)
 
 void timer1_CTCmode_init(int prescaler_num_input, int top_val)
 {
-
-	//if prescaler_num_input == -1 --> STOP timer
-	
 	int i=0;
 	while(i<8)
 	{
@@ -89,8 +86,30 @@ void timer1_CTCmode_init(int prescaler_num_input, int top_val)
 			(pres_timer1_2_3[i].CSn0_val<<CS10)|
 			(1<<WGM12);
 	
-	TIMSK=(1<<OCIE1A);
+	TIMSK|=(1<<OCIE1A);
 	OCR1A=top_val;
 	sei();
 }
+
+
+void timer3_CTCmode_init(int prescaler_num_input, int top_val)
+{
+	
+	int i=0;
+	while(i<8)
+	{
+		if(prescaler_num_input==pres_timer1_2_3[i].prescaler_num)break;
+		i++;
+	}
+	
+	TCCR3B = (pres_timer1_2_3[i].CSn2_val<<CS12)|
+	(pres_timer1_2_3[i].CSn1_val<<CS11)|
+	(pres_timer1_2_3[i].CSn0_val<<CS10)|
+	(1<<WGM12);
+	
+	ETIMSK |=(1<<OCIE3A);
+	OCR3A=top_val;
+	sei();
+}
+
 

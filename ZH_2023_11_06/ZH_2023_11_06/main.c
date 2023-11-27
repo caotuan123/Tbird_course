@@ -33,6 +33,13 @@ void mode2_num_count();
 uint8_t mode2_get_number(int *result);
 void mode2_stop();
 
+
+uint8_t ora[2] = {0, 0};
+void lcd_dis_time(uint8_t row,uint8_t col);
+void lcd_time_vlt();
+void mode4_clock_run();
+void mode4_start();
+void mode4_stop();
  
 const int led_states_len= LED_STATES_LEN;
 uint8_t led_states[LED_STATES_LEN]=
@@ -66,7 +73,8 @@ int main(void)
 	matrix_init();
 	lcd_init();
 	button_init();
-
+	lcd_cur_posi(LCD_ROW_0,0);
+	lcd_data('>');
     while (1) 
     {
 		uint8_t but_var = button_get();
@@ -96,13 +104,19 @@ int main(void)
 ISR(TIMER0_COMP_vect)
 {
 	mode2_num_count();
-	
 }
 
 ISR(TIMER1_COMPA_vect)
 {
 	mode1_led_run(led_states,led_states_len);
 }
+
+ISR(TIMER3_COMPA_vect)
+{
+	mode4_clock_run();
+}
+
+
 void move_arrow(uint8_t direct){
 	
 	uint8_t arrow_pos_next=(arrow_pos_current+direct)%4;
@@ -245,7 +259,50 @@ void mode2_stop()
 	lcd_write_string("STOP      ");
 	
 }
-		
+
+
+
+void lcd_time_vlt()
+{
+	if (ora[1] == 59)
+	{
+		ora[1] = 0;
+		ora[0]++;
+		if (ora[0] == 59)
+		ora[0] = 0;
+	}
+	else
+	ora[1]++;
+}
+void lcd_dis_time(uint8_t row,uint8_t col)
+{
+	lcd_cur_posi(row, col);
+	char buf[3];
+	if (ora[0] < 10)
+	lcd_write_string("0");
+	lcd_write_string(itoa(ora[0], buf, 10));
+	lcd_write_string(":");
+	if (ora[1] < 10)
+	lcd_write_string("0");
+	lcd_write_string(itoa(ora[1], buf, 10));
+}
+
+void mode4_clock_run(){
+	lcd_time_vlt();
+	lcd_dis_time(LCD_ROW_3,4);
+}
+
+
+void mode4_start(){
+	timer3_CTCmode_init(256,31249);
+	
+}
+
+void mode4_stop(){
+	timer3_CTCmode_init(0,0);
+	lcd_cur_posi(LCD_ROW_3,1);
+	lcd_write_string("Clock stopped");
+}
 void start_handle()
 {
 	switch(arrow_pos_current){
@@ -259,7 +316,7 @@ void start_handle()
 			//mode3_start();
 			break;
 		case 3:
-			//mode4_start();
+			mode4_start();
 			break;
 			
 		default:
@@ -280,7 +337,7 @@ void stop_handle()
 			//mode3_stop();
 			break;
 		case 3:
-			//mode4_stop();
+			mode4_stop();
 			break;
 		
 		default:

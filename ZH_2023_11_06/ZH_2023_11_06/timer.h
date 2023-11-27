@@ -15,6 +15,7 @@ extern prescaler pres_timer1_2_3[8];
 void timer0_nomalmode_init(int prescaler_num_input, int top_val);
 void timer0_CTCmode_init(int prescaler_num_input, int top_val);
 void timer1_CTCmode_init(int prescaler_num_input, int top_val);
+void timer3_CTCmode_init(int prescaler_num_input, int top_val);
 
 
 #endif
