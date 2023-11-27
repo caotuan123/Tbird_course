@@ -83,13 +83,14 @@ void timer1_CTCmode_init(int prescaler_num_input, int top_val)
 		if(prescaler_num_input==pres_timer1_2_3[i].prescaler_num)break;
 		i++;
 	}
-	TCCR1B= (pres_timer1_2_3[i].CSn2_val<<CS12)|
-	(pres_timer1_2_3[i].CSn1_val<<CS11)|
-	(pres_timer1_2_3[i].CSn0_val<<CS10)|
-	(1<<WGM12);
 	
-	TCNT1=0;
-	TIMSK=(1<<OCIE1A); //• Bit 1 – OCIE0 TimerCounter0 Output Compare Match Interrupt Enable
+	TCCR1B = (pres_timer1_2_3[i].CSn2_val<<CS12)|
+			(pres_timer1_2_3[i].CSn1_val<<CS11)|
+			(pres_timer1_2_3[i].CSn0_val<<CS10)|
+			(1<<WGM12);
+	
+	TIMSK=(1<<OCIE1A);
 	OCR1A=top_val;
 	sei();
 }
+

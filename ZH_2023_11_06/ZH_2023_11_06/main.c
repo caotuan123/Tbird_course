@@ -20,10 +20,12 @@
 # define ARROW_DIRECT_UP -1
 # define ARROW_DIRECT_DOWN 1
 
-void start();
-void stop();
+void start_handle();
+void stop_handle();
 void move_arrow(uint8_t direct);
 
+void mode1_start();
+void mode1_stop();
 void mode1_led_run(const uint8_t* states,const int states_len);
 
 void mode2_start();
@@ -77,10 +79,10 @@ int main(void)
 				move_arrow(ARROW_DIRECT_UP);
 				break;
 			case 3://start mode
-				start();
+				start_handle();
 				break;
 			case 4://stop mode
-				stop();
+				stop_handle();
 				break;
 			default:
 				break;
@@ -94,8 +96,13 @@ int main(void)
 ISR(TIMER0_COMP_vect)
 {
 	mode2_num_count();
+	
 }
 
+ISR(TIMER1_COMPA_vect)
+{
+	mode1_led_run(led_states,led_states_len);
+}
 void move_arrow(uint8_t direct){
 	
 	uint8_t arrow_pos_next=(arrow_pos_current+direct)%4;
@@ -105,6 +112,23 @@ void move_arrow(uint8_t direct){
 	lcd_data('>');
 	arrow_pos_current=arrow_pos_next;
 }
+
+void mode1_start()
+{	
+	lcd_cur_posi(LCD_ROW_0,1);
+	lcd_write_string("Led running");
+	timer1_CTCmode_init(256,31249);
+	
+}
+
+void mode1_stop()
+{
+	timer1_CTCmode_init(0,0);	
+	led_out(0x00);
+	lcd_cur_posi(LCD_ROW_0,1);
+	lcd_write_string("Led stopped");
+}
+
 
 void mode1_led_run(const uint8_t* states,const int states_len){
 	static int counter;
@@ -222,11 +246,11 @@ void mode2_stop()
 	
 }
 		
-void start()
+void start_handle()
 {
 	switch(arrow_pos_current){
 		case 0:
-			//mode1_start();
+			mode1_start();
 			break;
 		case 1:
 			mode2_start();
@@ -243,11 +267,11 @@ void start()
 	}
 }
 
-void stop()
+void stop_handle()
 {
 	switch(arrow_pos_current){
 		case 0:
-			//mode1_stop();
+			mode1_stop();
 			break;
 		case 1:
 			mode2_stop();	
