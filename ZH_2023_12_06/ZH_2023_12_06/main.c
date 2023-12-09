@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <avr/interrupt.h>
 
+#include "USART.h"
 #include "led.h"
 #include "lcd.h"
 #include "common.h"
@@ -21,7 +22,7 @@
 #include "adc.h"
 #include "mode1.h"
 #include "mode2.h"
-
+#include "mode3.h"
 #define ARROW_DIRECT_UP -1
 #define ARROW_DIRECT_DOWN 1
 
@@ -46,7 +47,7 @@ int main(void)
 	sevsg_start_display();
 	lcd_cur_posi(LCD_ROW_0, 0);
 	lcd_data('>');
-
+	
 	while (1)
 	{
 		uint8_t but_var = button_get();
@@ -86,6 +87,10 @@ ISR(TIMER3_COMPA_vect)
 	mode2_run();
 }
 
+ISR(USART0_RX_vect)
+{
+	mode3_run();
+}
 void sevsg_start_display()
 {
 	timer0_CTCmode_init(128, 125);
@@ -114,6 +119,7 @@ void start_handle()
 		break;
 
 	case 2:
+		mode3_start();
 		break;
 	case 3:
 
@@ -135,7 +141,7 @@ void stop_handle()
 		mode2_stop();
 		break;
 	case 2:
-
+		mode3_stop();
 		break;
 	case 3:
 

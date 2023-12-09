@@ -1,5 +1,8 @@
 #include "USART.h"
+#include "lcd.h"
 #include <avr/io.h>
+
+
 
 void USART0_Init(uint16_t baud)
 {
@@ -8,9 +11,12 @@ void USART0_Init(uint16_t baud)
 	UBRR0H = (unsigned char)(baud >> 8);
 	UBRR0L = (unsigned char)baud;
 	/* Enable receiver and transmitter */
-	UCSR0B = (1 << RXEN0) | (1 << TXEN0) | (1 << RXCIE0); // RXEN0: RX Complete Interrupt Enable
+	UCSR0B = (1 << RXEN0) | (1 << TXEN0)| (1 << RXCIE0) ; // RXCIEn: RX Complete Interrupt Enable 
 	/* Set frame format: 8data, 2stop bit */
 	UCSR0C = (1 << USBS0) | (3 << UCSZ00);
+}
+void USART0_stop(){
+	UCSR0B=0;
 }
 void USART1_Init(uint16_t baud)
 {

@@ -176,6 +176,12 @@
     <Compile Include="mode2.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="mode3.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="mode3.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="timer.c">
       <SubType>compile</SubType>
     </Compile>
