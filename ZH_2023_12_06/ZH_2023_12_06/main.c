@@ -30,6 +30,7 @@ void start_handle();
 void stop_handle();
 void move_arrow(uint8_t direct);
 void sevsg_start_display();
+void init_menu();
 uint8_t arrow_pos_current = 0;
 
 // timer0 for sevseg
@@ -47,6 +48,7 @@ int main(void)
 	sevsg_start_display();
 	lcd_cur_posi(LCD_ROW_0, 0);
 	lcd_data('>');
+	init_menu();
 	
 	while (1)
 	{
@@ -150,4 +152,16 @@ void stop_handle()
 	default:
 		break;
 	}
+	init_menu();
+}
+
+void init_menu(){
+	lcd_cur_posi(LCD_ROW_0,1);
+	lcd_write_string("ADC");
+	lcd_cur_posi(LCD_ROW_1,1);
+	lcd_write_string("Szamlalo");
+	lcd_cur_posi(LCD_ROW_2,1);
+	lcd_write_string("Szamologep");
+	lcd_cur_posi(LCD_ROW_3,1);
+	lcd_write_string("Ora");
 }
