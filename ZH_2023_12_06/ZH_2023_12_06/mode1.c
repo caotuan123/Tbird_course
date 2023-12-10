@@ -6,7 +6,7 @@
 void mode1_start()
 {
 	// start timer
-	timer1_CTCmode_init(256, 30000);
+	timer1_CTCmode_init(256, 1000);
 	adc_init();
 }
 void mode1_stop()
@@ -18,7 +18,7 @@ void mode1_stop()
 void mode1_run()
 {
 	static int sum, counter;
-	sum += adc_mer();
+	sum += adc_C();
 	counter++;
 	if (counter == 10)
 	{

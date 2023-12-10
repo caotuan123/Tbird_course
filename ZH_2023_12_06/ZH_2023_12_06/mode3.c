@@ -68,7 +68,7 @@ void cmd_handle(){
 
 void mode3_run(){
 	unsigned char received_data=USART0_Receive();
-	
+	USART0_Transmit(received_data);
 	if(received_data=='\n' || received_data=='\r'){
 		USART0_buff[USART0_buff_ptr]='\0';
 		USART0_buff_ptr=0;
