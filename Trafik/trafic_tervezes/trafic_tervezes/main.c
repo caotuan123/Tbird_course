@@ -204,6 +204,7 @@ int main(void)
 					PORTA = 0;
 					PORTC = 0;
 					PORTE &= ~((1 << LG1_Z) | (1 << LG2_Z) | (1 << LG1_P) | (1 << LG2_P));
+					PORTF &= ~((1<< LE_Z2));
 					day_night_mode = 0; // ejszakasi
 					common_state = 0;		// start at first state
 					led_pwm_allapot.led_g1_z = 0;
