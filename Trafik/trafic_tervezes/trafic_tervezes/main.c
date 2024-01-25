@@ -206,6 +206,8 @@ int main(void)
 					PORTE &= ~((1 << LG1_Z) | (1 << LG2_Z) | (1 << LG1_P) | (1 << LG2_P));
 					day_night_mode = 0; // ejszakasi
 					common_state = 0;		// start at first state
+					led_pwm_allapot.led_g1_z = 0;
+					led_pwm_allapot.led_g2_z = 0;
 					break;
 				default:
 					break;
