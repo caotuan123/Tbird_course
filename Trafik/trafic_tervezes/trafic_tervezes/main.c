@@ -136,10 +136,9 @@ allapot nappali_v[10] = {
 
 };
 
-
 int common_state = 0;
-uint8_t is_train_comming = 0;		// 1-> jon a vonat, 0->nincs vonat
-uint8_t day_night_mode = 1; // 1-> nappali, 0->ejszakasi
+uint8_t is_train_comming = 0; // 1-> jon a vonat, 0->nincs vonat
+uint8_t day_night_mode = 1;		// 1-> nappali, 0->ejszakasi
 
 uint8_t vonat_gomb_get(void);
 void do_traffic(allapot *mod);
@@ -165,7 +164,6 @@ int main(void)
 	PORTE = (1 << BTNV1) | (1 << BTNV2);
 
 	uint8_t button_tmp;
-	uint8_t elso_vonat_gomb = 0;
 	uint8_t vonat_but = 0;
 	// handle button, change mode
 	while (1)
@@ -175,6 +173,7 @@ int main(void)
 
 		if (vonat_but)
 		{
+			static uint8_t elso_vonat_gomb = 0;
 			if ((!is_train_comming) && (!elso_vonat_gomb))
 			{
 				elso_vonat_gomb = vonat_but;
@@ -215,16 +214,17 @@ int main(void)
 
 			// else if (button_tmp == 3 || button_tmp == 4)
 			// {
-			// 	if ((!is_train_comming) && (!regi_vonat_gomb))
+			//  static uint8_t elso_vonat_gomb = 0;
+			// 	if ((!is_train_comming) && (!elso_vonat_gomb))
 			// 	{
-			// 		regi_vonat_gomb = button_tmp;
+			// 		elso_vonat_gomb = button_tmp;
 			// 		is_train_comming = 1;
 			// 		led_pwm_allapot.led_v_f = 0;
 			// 		PORTF &= ~(1 << LV_F);
 			// 	}
-			// 	if (is_train_comming && (regi_vonat_gomb != button_tmp))
+			// 	if (is_train_comming && (elso_vonat_gomb != button_tmp))
 			// 	{
-			// 		regi_vonat_gomb = 0;
+			// 		elso_vonat_gomb = 0;
 			// 		is_train_comming = 0;
 			// 		led_pwm_allapot.led_v_f = 1;
 			// 		PORTF &= ~((1 << LV_P1) | (1 << LV_P2));
@@ -249,7 +249,7 @@ uint8_t vonat_gomb_get(void)
 		regi_vonat_gomb_all = vonat_gomb;
 		return vonat_gomb;
 	}
-		return 0;
+	return 0;
 }
 
 void do_traffic(allapot *mod)
@@ -479,16 +479,7 @@ void train_leds(uint8_t state)
 }
 void pwm_first_half(uint8_t state)
 {
-	if (state)
-	{
 		night_mode_yellow_leds(state);
 		gyalog_green_leds(state);
 		train_leds(state);
-	}
-	else
-	{
-		night_mode_yellow_leds(state);
-		gyalog_green_leds(state);
-		train_leds(state);
-	}
 }
