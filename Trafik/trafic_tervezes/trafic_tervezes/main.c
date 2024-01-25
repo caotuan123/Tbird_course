@@ -100,7 +100,7 @@ typedef struct allapotok
 	uint8_t led_v_f;
 
 	const uint8_t times; // TODO explain
-	uint8_t counter;		// TODO explain
+	uint8_t counter;		 // TODO explain
 
 } allapot;
 
@@ -145,34 +145,28 @@ allapot nappali_v[10] = {
 
 };
 
-allapot ejszakas[2] = {
-		/*0*/ {0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-		/*1*/ {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-
-};
-
-uint8_t pwm1 = 0;
+uint8_t first_half_pwm = 0;
 uint8_t pwm2 = 0;
-uint16_t timer0_counter = 0;
-uint8_t timer0_counter_1 = 0;
-uint8_t timer0_counter_2 = 0;
+uint16_t t0_main_counter = 0;
+uint8_t t0_first_half_counter = 0;
+uint8_t t0_second_half_counter = 0;
 uint8_t regi_gomb = 0;
-uint8_t jon_a_vonat = 0;	 // 1-> jon a vonat, 0->nincs vonat
-uint8_t mod_valasztas = 1; // 1-> nappali, 0->ejszakasi
+uint8_t jon_a_vonat = 0;		// 1-> jon a vonat, 0->nincs vonat
+uint8_t day_night_mode = 1; // 1-> nappali, 0->ejszakasi
 
 uint8_t vonat_gomb_get(void);
 void do_traffic(allapot *mod);
 void ejszakasi_mod();
 void nappali_mod();
-
+void night_mode_yellow_leds(uint8_t state);
+void pwm_first_half(uint8_t state);
 int main(void)
 {
-
+	// set up
 	led_init();
-	timer1_CTCmode_init(256, 15625); /// 256-15625
-	timer0_CTCmode_init(32, 25);
+	timer1_CTCmode_init(256, 15625); // time:0.5s
+	timer0_CTCmode_init(32, 25);		 // time:?
 	sei();
-
 	button_init();
 
 	DDRA = PORTA_MASK;
@@ -187,7 +181,7 @@ int main(void)
 	uint8_t regi_vonat_gomb = 0;
 	uint8_t regi_vonat_gomb1 = 0;
 	uint8_t vonat_but = 0;
-	uint8_t sum = 0;
+	// handle button, change mode
 	while (1)
 	{
 
@@ -199,12 +193,14 @@ int main(void)
 			{
 				regi_vonat_gomb1 = vonat_but;
 				jon_a_vonat = 1;
+				led_pwm_allapot.led_v_f = 0;
 				PORTF &= ~(1 << LV_F);
 			}
 			if (jon_a_vonat && (regi_vonat_gomb1 != vonat_but))
 			{
 				regi_vonat_gomb1 = 0;
 				jon_a_vonat = 0;
+				led_pwm_allapot.led_v_f = 1;
 				PORTF &= ~((1 << LV_P1) | (1 << LV_P2));
 			}
 		}
@@ -213,39 +209,41 @@ int main(void)
 		if (button_tmp)
 		{
 			if (button_tmp < 3)
-				switch (button_tmp)
+				switch (button_tmp) // choose day/night mode
 				{
 				case 1:
-					mod_valasztas = 1;
-					common_state = 0;
+					day_night_mode = 1; // nappali
+					common_state = 0;		// start at first state
 					break;
 				case 2:
 					PORTA = 0;
 					PORTC = 0;
 					PORTE &= ~((1 << LG1_Z) | (1 << LG2_Z) | (1 << LG1_P) | (1 << LG2_P));
-					mod_valasztas = 0;
-					common_state = 0;
+					day_night_mode = 0; // ejszakasi
+					common_state = 0;		// start at first state
 					break;
 				default:
 					break;
 				}
-			else if (button_tmp == 3 || button_tmp == 4)
-			{
-				if ((!jon_a_vonat) && (!regi_vonat_gomb))
-				{
-					regi_vonat_gomb = button_tmp;
-					jon_a_vonat = 1;
-					led_pwm_allapot.led_v_f = 0;
-					PORTF &= ~(1 << LV_F);
-				}
-				if (jon_a_vonat && (regi_vonat_gomb != button_tmp))
-				{
-					regi_vonat_gomb = 0;
-					jon_a_vonat = 0;
-					led_pwm_allapot.led_v_f = 1;
-					PORTF &= ~((1 << LV_P1) | (1 << LV_P2));
-				}
-			}
+			// Uncomment this part if you want to use the train button on the t-bird board
+
+			// else if (button_tmp == 3 || button_tmp == 4)
+			// {
+			// 	if ((!jon_a_vonat) && (!regi_vonat_gomb))
+			// 	{
+			// 		regi_vonat_gomb = button_tmp;
+			// 		jon_a_vonat = 1;
+			// 		led_pwm_allapot.led_v_f = 0;
+			// 		PORTF &= ~(1 << LV_F);
+			// 	}
+			// 	if (jon_a_vonat && (regi_vonat_gomb != button_tmp))
+			// 	{
+			// 		regi_vonat_gomb = 0;
+			// 		jon_a_vonat = 0;
+			// 		led_pwm_allapot.led_v_f = 1;
+			// 		PORTF &= ~((1 << LV_P1) | (1 << LV_P2));
+			// 	}
+			// }
 		}
 	}
 }
@@ -315,19 +313,19 @@ void nappali_mod()
 			do_traffic(nappali);
 	}
 
-	//count
+	// count
 	if (nappali[common_state].counter < nappali[common_state].times)
 	{
 		nappali[common_state].counter++;
 	}
 	else
 	{
-		//change to the next state
+		// change to the next state
 		nappali[common_state].counter = 0;
 		common_state++;
 		if (common_state == 10)
 			common_state = 1;
-		
+
 		if (jon_a_vonat)
 			do_traffic(nappali_v);
 		else
@@ -344,7 +342,6 @@ void nappali_mod()
 		PORTE &= ~(1 << LG1_Z);
 	}
 
-
 	if (nappali[common_state].led_g2_z == 2)
 		led_pwm_allapot.led_g2_z = 1;
 	else if (nappali[common_state].led_g2_z == 1)
@@ -354,110 +351,59 @@ void nappali_mod()
 		led_pwm_allapot.led_g2_z = 0;
 		PORTE &= ~(1 << LG2_Z);
 	}
-	
 }
 
-void ejszakasi_mod()
-{
-
-	if (ejszakas[common_state].counter < ejszakas[common_state].times)
-	{
-		ejszakas[common_state].counter++;
-	}
-	else
-	{
-		ejszakas[common_state].counter = 0;
-		common_state++;
-		if (common_state == 2)
-			common_state = 0;
-		led_out(common_state);
-
-		do_traffic(ejszakas);
-	}
-}
 ISR(TIMER1_COMPA_vect)
 {
-	if (mod_valasztas)
+	if (day_night_mode)
 		nappali_mod();
-	
-		//ejszakasi_mod();
 }
+// handle pwm
 ISR(TIMER0_COMP_vect)
 {
-	timer0_counter++;
-	if (timer0_counter == 10000)
+	t0_main_counter++;
+	if (t0_main_counter == 10000)
 	{
-		pwm1 = 0;
-		timer0_counter = 0;
+		first_half_pwm = 0;
+		t0_main_counter = 0;
 	}
-	if (timer0_counter > 5000)
+
+	if (t0_main_counter > 5000) 
+	/* first half: do pwm on yellow leds, train light red1,
+	 train light white and gyalog green leds */
 	{
-		timer0_counter_1++;
-		if (timer0_counter_1 == 100)
+		t0_first_half_counter++;
+		if (t0_first_half_counter == 100) // maximum of pwm
 		{
-			pwm1++;
-			if (pwm1 == 50)
-				pwm1 = 0;
-			timer0_counter_1 = 0;
+			t0_first_half_counter = 0;
+
+			first_half_pwm++;
+			if (first_half_pwm == 50)
+				first_half_pwm = 0;
 		}
-		if (pwm1 > timer0_counter_1)
+
+		if (first_half_pwm > t0_first_half_counter)
 		{
-			if (!mod_valasztas)
-			{
-
-				PORTA =
-						(1 << LA_S) |
-						(1 << LB_S);
-
-				PORTC =
-						(1 << LD_S) |
-						(1 << LC_S) |
-						(1 << LE_S);
-			}
-			if (led_pwm_allapot.led_g1_z)
-				PORTE |= (1 << LG1_Z);
-			if (led_pwm_allapot.led_g2_z)
-				PORTE |= (1 << LG2_Z);
-			if (led_pwm_allapot.led_v_f)
-				PORTF |= (1 << LV_F);
-			if (jon_a_vonat)
-				PORTF |= (1 << LV_P1);
+			pwm_first_half(1);
 		}
 		else
 		{
-			if (!mod_valasztas)
-			{
-
-				PORTA &= ~(
-						(1 << LA_S) |
-						(1 << LB_S));
-
-				PORTC &=
-						~((1 << LD_S) |
-							(1 << LC_S) |
-							(1 << LE_S));
-			}
-			if (led_pwm_allapot.led_g1_z)
-				PORTE &= ~(1 << LG1_Z);
-			if (led_pwm_allapot.led_g2_z)
-				PORTE &= ~(1 << LG2_Z);
-			if (led_pwm_allapot.led_v_f)
-				PORTF &= ~(1 << LV_F);
-			if (jon_a_vonat)
-				PORTF &= ~(1 << LV_P1);
+			pwm_first_half(0);
 		}
 	}
-	else
+	// second half turn off all light except train light red2
+	else 
 	{
-		timer0_counter_2++;
-		if (timer0_counter_2 == 100)
+		t0_second_half_counter++;
+		if (t0_second_half_counter == 100)
 		{
 			pwm2++;
 			if (pwm2 == 50)
 				pwm2 = 0;
-			timer0_counter_2 = 0;
+			t0_second_half_counter = 0;
 		}
-		if (pwm2 > timer0_counter_2)
+
+		if (pwm2 > t0_second_half_counter)
 		{
 			if (jon_a_vonat)
 				PORTF |= (1 << LV_P2);
@@ -467,5 +413,87 @@ ISR(TIMER0_COMP_vect)
 			if (jon_a_vonat)
 				PORTF &= ~(1 << LV_P2);
 		}
+	}
+}
+
+void night_mode_yellow_leds(uint8_t state)
+{
+	if (!day_night_mode) // ejszakasi mod
+	{
+		if (state)
+		{ // turn on all yellow leds
+			PORTA =
+					(1 << LA_S) |
+					(1 << LB_S);
+
+			PORTC =
+					(1 << LD_S) |
+					(1 << LC_S) |
+					(1 << LE_S);
+		}
+		else
+		{
+			// turn off all yellow leds
+			PORTA &= ~(
+					(1 << LA_S) |
+					(1 << LB_S));
+
+			PORTC &=
+					~((1 << LD_S) |
+						(1 << LC_S) |
+						(1 << LE_S));
+		}
+	}
+}
+
+// Pedestrian crossing light
+void gyalog_green_leds(uint8_t state)
+{
+	if (state)
+	{
+		if (led_pwm_allapot.led_g1_z)
+			PORTE |= (1 << LG1_Z);
+		if (led_pwm_allapot.led_g2_z)
+			PORTE |= (1 << LG2_Z);
+	}
+	else
+	{
+		if (led_pwm_allapot.led_g1_z)
+			PORTE &= ~(1 << LG1_Z);
+		if (led_pwm_allapot.led_g2_z)
+			PORTE &= ~(1 << LG2_Z);
+	}
+}
+
+void train_leds(uint8_t state)
+{
+	if (state)
+	{
+		if (led_pwm_allapot.led_v_f)
+			PORTF |= (1 << LV_F);
+		if (jon_a_vonat)
+			PORTF |= (1 << LV_P1);
+	}
+	else
+	{
+		if (led_pwm_allapot.led_v_f)
+			PORTF &= ~(1 << LV_F);
+		if (jon_a_vonat)
+			PORTF &= ~(1 << LV_P1);
+	}
+}
+void pwm_first_half(uint8_t state)
+{
+	if (state)
+	{
+		night_mode_yellow_leds(state);
+		gyalog_green_leds(state);
+		train_leds(state);
+	}
+	else
+	{
+		night_mode_yellow_leds(state);
+		gyalog_green_leds(state);
+		train_leds(state);
 	}
 }
