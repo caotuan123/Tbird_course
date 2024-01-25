@@ -91,6 +91,6 @@ void mode3_start(){
 	USART0_Init(103);
 }
 void mode3_stop(){
-	USART0_textsend("stop");
+	USART0_textsend("stop\r\n");
 	USART0_stop();
 }
