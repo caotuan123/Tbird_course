@@ -169,26 +169,26 @@ int main(void)
 	while (1)
 	{
 
-		vonat_but = vonat_gomb_get();
+		// vonat_but = vonat_gomb_get();
 
-		if (vonat_but)
-		{
-			static uint8_t elso_vonat_gomb = 0;
-			if ((!is_train_comming) && (!elso_vonat_gomb))
-			{
-				elso_vonat_gomb = vonat_but;
-				is_train_comming = 1;
-				led_pwm_allapot.led_v_f = 0;
-				PORTF &= ~(1 << LV_F);
-			}
-			if (is_train_comming && (elso_vonat_gomb != vonat_but))
-			{
-				elso_vonat_gomb = 0;
-				is_train_comming = 0;
-				led_pwm_allapot.led_v_f = 1;
-				PORTF &= ~((1 << LV_P1) | (1 << LV_P2));
-			}
-		}
+		// if (vonat_but)
+		// {
+		// 	static uint8_t elso_vonat_gomb = 0;
+		// 	if ((!is_train_comming) && (!elso_vonat_gomb))
+		// 	{
+		// 		elso_vonat_gomb = vonat_but;
+		// 		is_train_comming = 1;
+		// 		led_pwm_allapot.led_v_f = 0;
+		// 		PORTF &= ~(1 << LV_F);
+		// 	}
+		// 	if (is_train_comming && (elso_vonat_gomb != vonat_but))
+		// 	{
+		// 		elso_vonat_gomb = 0;
+		// 		is_train_comming = 0;
+		// 		led_pwm_allapot.led_v_f = 1;
+		// 		PORTF &= ~((1 << LV_P1) | (1 << LV_P2));
+		// 	}
+		// }
 
 		button_tmp = button_get();
 		if (button_tmp)
@@ -212,24 +212,24 @@ int main(void)
 				}
 			// Uncomment this part if you want to use the train button on the t-bird board
 
-			// else if (button_tmp == 3 || button_tmp == 4)
-			// {
-			//  static uint8_t elso_vonat_gomb = 0;
-			// 	if ((!is_train_comming) && (!elso_vonat_gomb))
-			// 	{
-			// 		elso_vonat_gomb = button_tmp;
-			// 		is_train_comming = 1;
-			// 		led_pwm_allapot.led_v_f = 0;
-			// 		PORTF &= ~(1 << LV_F);
-			// 	}
-			// 	if (is_train_comming && (elso_vonat_gomb != button_tmp))
-			// 	{
-			// 		elso_vonat_gomb = 0;
-			// 		is_train_comming = 0;
-			// 		led_pwm_allapot.led_v_f = 1;
-			// 		PORTF &= ~((1 << LV_P1) | (1 << LV_P2));
-			// 	}
-			// }
+			else if (button_tmp == 3 || button_tmp == 4)
+			{
+			 static uint8_t elso_vonat_gomb = 0;
+				if ((!is_train_comming) && (!elso_vonat_gomb))
+				{
+					elso_vonat_gomb = button_tmp;
+					is_train_comming = 1;
+					led_pwm_allapot.led_v_f = 0;
+					PORTF &= ~(1 << LV_F);
+				}
+				if (is_train_comming && (elso_vonat_gomb != button_tmp))
+				{
+					elso_vonat_gomb = 0;
+					is_train_comming = 0;
+					led_pwm_allapot.led_v_f = 1;
+					PORTF &= ~((1 << LV_P1) | (1 << LV_P2));
+				}
+			}
 		}
 	}
 }
