@@ -56,15 +56,6 @@
 #define PORTF_MASK 0x0F
 #define PORTE_MASK 0xCC
 
-int common_state = 0;
-uint8_t regi_allapot;
-
-struct phan_so
-{
-	int mau;
-	int tu;
-}
-
 typedef struct allapotok
 {
 	uint8_t led_a_p;
@@ -99,8 +90,8 @@ typedef struct allapotok
 	uint8_t led_v_p2;
 	uint8_t led_v_f;
 
-	const uint8_t times; // TODO explain
-	uint8_t counter;		 // TODO explain
+	const uint8_t times; // period times
+	uint8_t counter;		 // current counter for period times
 
 } allapot;
 
@@ -145,13 +136,9 @@ allapot nappali_v[10] = {
 
 };
 
-uint8_t first_half_pwm = 0;
-uint8_t pwm2 = 0;
-uint16_t t0_main_counter = 0;
-uint8_t t0_first_half_counter = 0;
-uint8_t t0_second_half_counter = 0;
-uint8_t regi_gomb = 0;
-uint8_t jon_a_vonat = 0;		// 1-> jon a vonat, 0->nincs vonat
+uint8_t regi_vonat_gomb = 0;
+int common_state = 0;
+uint8_t is_train_comming = 0;		// 1-> jon a vonat, 0->nincs vonat
 uint8_t day_night_mode = 1; // 1-> nappali, 0->ejszakasi
 
 uint8_t vonat_gomb_get(void);
@@ -164,8 +151,8 @@ int main(void)
 {
 	// set up
 	led_init();
-	timer1_CTCmode_init(256, 15625); // time:0.5s
-	timer0_CTCmode_init(32, 25);		 // time:?
+	timer1_CTCmode_init(256, 15625); // time:0.5s (256, 15625) for 8MHz
+	timer0_CTCmode_init(32, 25);		 // time:100us (32, 25) for 8MHz
 	sei();
 	button_init();
 
@@ -178,7 +165,6 @@ int main(void)
 	PORTE = (1 << BTNV1) | (1 << BTNV2);
 
 	uint8_t button_tmp;
-	uint8_t regi_vonat_gomb = 0;
 	uint8_t regi_vonat_gomb1 = 0;
 	uint8_t vonat_but = 0;
 	// handle button, change mode
@@ -189,17 +175,17 @@ int main(void)
 
 		if (vonat_but)
 		{
-			if ((!jon_a_vonat) && (!regi_vonat_gomb1))
+			if ((!is_train_comming) && (!regi_vonat_gomb1))
 			{
 				regi_vonat_gomb1 = vonat_but;
-				jon_a_vonat = 1;
+				is_train_comming = 1;
 				led_pwm_allapot.led_v_f = 0;
 				PORTF &= ~(1 << LV_F);
 			}
-			if (jon_a_vonat && (regi_vonat_gomb1 != vonat_but))
+			if (is_train_comming && (regi_vonat_gomb1 != vonat_but))
 			{
 				regi_vonat_gomb1 = 0;
-				jon_a_vonat = 0;
+				is_train_comming = 0;
 				led_pwm_allapot.led_v_f = 1;
 				PORTF &= ~((1 << LV_P1) | (1 << LV_P2));
 			}
@@ -229,17 +215,17 @@ int main(void)
 
 			// else if (button_tmp == 3 || button_tmp == 4)
 			// {
-			// 	if ((!jon_a_vonat) && (!regi_vonat_gomb))
+			// 	if ((!is_train_comming) && (!regi_vonat_gomb))
 			// 	{
 			// 		regi_vonat_gomb = button_tmp;
-			// 		jon_a_vonat = 1;
+			// 		is_train_comming = 1;
 			// 		led_pwm_allapot.led_v_f = 0;
 			// 		PORTF &= ~(1 << LV_F);
 			// 	}
-			// 	if (jon_a_vonat && (regi_vonat_gomb != button_tmp))
+			// 	if (is_train_comming && (regi_vonat_gomb != button_tmp))
 			// 	{
 			// 		regi_vonat_gomb = 0;
-			// 		jon_a_vonat = 0;
+			// 		is_train_comming = 0;
 			// 		led_pwm_allapot.led_v_f = 1;
 			// 		PORTF &= ~((1 << LV_P1) | (1 << LV_P2));
 			// 	}
@@ -257,9 +243,9 @@ uint8_t vonat_gomb_get(void)
 	else if (BTNV2_PRESSED())
 		vonat_gomb = 2;
 
-	if (vonat_gomb != regi_gomb)
+	if (vonat_gomb != regi_vonat_gomb)
 	{
-		regi_gomb = vonat_gomb;
+		regi_vonat_gomb = vonat_gomb;
 		return vonat_gomb;
 	}
 	else
@@ -269,6 +255,7 @@ uint8_t vonat_gomb_get(void)
 
 void do_traffic(allapot *mod)
 {
+	uint8_t regi_allapot;
 	PORTA = (mod[common_state].led_a_p << LA_P) |
 					(mod[common_state].led_a_s << LA_S) |
 					(mod[common_state].led_a_z << LA_Z) |
@@ -307,7 +294,7 @@ void nappali_mod()
 	// this state just happen once
 	if (common_state == 0)
 	{
-		if (jon_a_vonat)
+		if (is_train_comming)
 			do_traffic(nappali_v);
 		else
 			do_traffic(nappali);
@@ -326,7 +313,7 @@ void nappali_mod()
 		if (common_state == 10)
 			common_state = 1;
 
-		if (jon_a_vonat)
+		if (is_train_comming)
 			do_traffic(nappali_v);
 		else
 			do_traffic(nappali);
@@ -358,9 +345,18 @@ ISR(TIMER1_COMPA_vect)
 	if (day_night_mode)
 		nappali_mod();
 }
+
 // handle pwm
 ISR(TIMER0_COMP_vect)
 {
+	static int t0_main_counter = 0;
+
+	static int t0_first_half_counter = 0;
+	static int t0_second_half_counter = 0;
+
+	static int first_half_pwm = 0;
+	static int second_half_pwm = 0;
+
 	t0_main_counter++;
 	if (t0_main_counter == 10000)
 	{
@@ -368,7 +364,7 @@ ISR(TIMER0_COMP_vect)
 		t0_main_counter = 0;
 	}
 
-	if (t0_main_counter > 5000) 
+	if (t0_main_counter > 5000)
 	/* first half: do pwm on yellow leds, train light red1,
 	 train light white and gyalog green leds */
 	{
@@ -392,25 +388,25 @@ ISR(TIMER0_COMP_vect)
 		}
 	}
 	// second half turn off all light except train light red2
-	else 
+	else
 	{
 		t0_second_half_counter++;
 		if (t0_second_half_counter == 100)
 		{
-			pwm2++;
-			if (pwm2 == 50)
-				pwm2 = 0;
+			second_half_pwm++;
+			if (second_half_pwm == 50)
+				second_half_pwm = 0;
 			t0_second_half_counter = 0;
 		}
 
-		if (pwm2 > t0_second_half_counter)
+		if (second_half_pwm > t0_second_half_counter)
 		{
-			if (jon_a_vonat)
+			if (is_train_comming)
 				PORTF |= (1 << LV_P2);
 		}
 		else
 		{
-			if (jon_a_vonat)
+			if (is_train_comming)
 				PORTF &= ~(1 << LV_P2);
 		}
 	}
@@ -471,14 +467,14 @@ void train_leds(uint8_t state)
 	{
 		if (led_pwm_allapot.led_v_f)
 			PORTF |= (1 << LV_F);
-		if (jon_a_vonat)
+		if (is_train_comming)
 			PORTF |= (1 << LV_P1);
 	}
 	else
 	{
 		if (led_pwm_allapot.led_v_f)
 			PORTF &= ~(1 << LV_F);
-		if (jon_a_vonat)
+		if (is_train_comming)
 			PORTF &= ~(1 << LV_P1);
 	}
 }
