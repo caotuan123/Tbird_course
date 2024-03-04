@@ -1,0 +1,140 @@
+
+#include <avr/io.h>
+#include <string.h>
+
+void USART_Init( uint16_t baud );
+void USART_Transmit( unsigned char data );
+unsigned char USART_Receive( void );
+void USART_textsend(char*s);
+void RGBled_init(void);
+void resetRGB(void);
+void clear_char(char*text);
+
+int main(void)
+{
+	char command[][9] = {
+							"STOP",
+							"RED ON",
+							"GREEN ON",
+							"BLUE ON"
+						 };
+	
+	uint8_t size_command = sizeof(command) / sizeof(command[0]);   
+	//char *text;
+	USART_Init(51);//9600 bps, 8 bit data, 2 bit stop
+	RGBled_init();
+	//PORTE=0x04;//B
+	//PORTE=0x08;//G
+	//PORTC=0x80;//R
+	char j=0;//oder
+	char fogad[9];
+	char c;
+	uint8_t i=0;
+	while(1)
+	{
+		
+		while(1)
+		{
+			c=USART_Receive();
+			if(c=='\n'||c=='\r')break;
+			fogad[i]=c;
+			i++;
+		}
+		USART_textsend(fogad);
+		i=0;
+		j=0;
+		
+		while(j<size_command)
+		{
+			if(!(strncmp(fogad, command[j],strlen(command[j])))) break;
+			j++;
+		}
+		
+		switch(j)
+		{
+			case 1 ://RED
+			resetRGB();
+			PORTC=0x80; break;
+			case 2 ://GREED
+			resetRGB();
+			PORTE=0x08; break;
+			case 3 ://BLUE
+			resetRGB();
+			PORTE=0x04; break;
+			default:
+			resetRGB();
+			break;
+		}
+	clear_char(fogad);
+	}
+	
+	
+}
+//8 MHz esetén
+//9600 51
+//19.2k 25
+//57.6k 8
+//115.2k 3
+void USART_Init( uint16_t baud )
+{
+	/* Set baud rate */
+	UBRR0H = (unsigned char)(baud >>8);
+	UBRR0L = (unsigned char)baud ;
+	/* Enable receiver and transmitter */
+	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
+	/* Set frame format: 8data, 2stop bit */
+	UCSR0C = (0<<USBS0)|(3<<UCSZ00);
+}
+void USART_Transmit( unsigned char data )
+{
+	/* Wait for empty transmit buffer */
+	while ( !( UCSR0A & (1<<UDRE0)) )
+	;
+	/* Copy ninth bit to TXB8 */
+	UCSR0B &= ~(1<<TXB80);
+	if ( data & 0x0100 )
+	UCSR0B |= (1<<TXB80);
+	/* Put data into buffer, sends the data */
+	UDR0 = data;
+}
+
+unsigned char USART_Receive( void )
+{
+	/* Wait for data to be received */
+	while ( !(UCSR0A & (1<<RXC0)) )
+	;
+	/* Get and return received data from buffer */
+	return UDR0;
+}
+
+void USART_textsend(char*s)
+{
+	{ while (*s)
+		{
+			USART_Transmit(*s);
+			s++;
+		}
+	}
+}
+void RGBled_init(void)
+{
+	DDRE|=0x0C;
+	DDRC|=0x80;
+}
+
+void resetRGB(void)
+{
+	PORTE=0x0;//B
+	PORTE=0x0;//G
+	PORTC=0x0;
+}
+
+void clear_char(char*text)
+{
+	
+	while(*text)
+	{
+		*text=0;
+		text++;
+	}
+}
